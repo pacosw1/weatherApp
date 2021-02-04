@@ -16,6 +16,7 @@ const Dashboard = (props) => {
   let [keyword, setKeyword] = useState("");
 
   let [forecast, setForcast] = useState({});
+  let [forecastDays, setForecastDays] = useState([]);
 
   useEffect(() => {
     d3.select("#d3-graph").select("svg").remove();
@@ -24,6 +25,8 @@ const Dashboard = (props) => {
       console.log(forecast);
 
       drawChart(w, forecast.forecast.hour);
+      drawChart2(w / 2, forecastDays[1].hour, 2);
+      drawChart2(w / 2, forecastDays[2].hour, 3);
     }
   }, [w, forecast]);
 
@@ -49,12 +52,12 @@ const Dashboard = (props) => {
   const onGetWeatherData = async (id) => {
     try {
       let { data } = await axios.get(
-        `http://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${id}&days=1`
+        `http://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${id}&days=3`
       );
 
       let { alerts, current, forecast, location } = data;
       let { forecastday } = forecast;
-
+      console.log("fulldata", data);
       const forecastData = {
         location: {
           city: location.name,
@@ -68,6 +71,7 @@ const Dashboard = (props) => {
           hour: forecastday[0].hour,
         },
       };
+      setForecastDays(data.forecast.forecastday);
 
       setForcast(forecastData);
       setKeyword("");
@@ -89,6 +93,14 @@ const Dashboard = (props) => {
       />
     );
   });
+
+  const options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  };
 
   let days = {
     0: "Sunday",
@@ -144,12 +156,47 @@ const Dashboard = (props) => {
           <HeaderName>Temperature Forecast</HeaderName>
           <div id={"d3-graph"} />
         </GraphContainer>
+        <GraphContainer>
+          <HeaderName>Next Days</HeaderName>
+          <Container>
+            <div>
+              <LabelGraph>
+                {forecastDays.length > 1
+                  ? new Date(forecastDays[1].date).toLocaleDateString(
+                      "en-GB",
+                      options
+                    )
+                  : null}
+              </LabelGraph>
+              <div id={"d3-graph2"} />
+            </div>
+            <div>
+              <LabelGraph>
+                {forecastDays.length >= 2
+                  ? new Date(forecastDays[2].date).toLocaleDateString(
+                      "en-GB",
+                      options
+                    )
+                  : null}
+              </LabelGraph>
+              <div id={"d3-graph3"} />
+            </div>
+          </Container>
+        </GraphContainer>
       </ResizeDiv>
     </Wrapper>
   );
 };
 
 export default Dashboard;
+
+const LabelGraph = styled.p`
+  padding: 0rem 2rem;
+`;
+
+const Container = styled.div`
+  display: flex;
+`;
 
 const GraphContainer = styled.div`
   border: 1px solid #ddd;
@@ -271,6 +318,167 @@ const drawChart = (w, data) => {
 
   const svg = d3
     .select("#d3-graph")
+    .append("svg")
+    .attr("width", w)
+    .attr("height", h);
+  // .style("border", "1px solid black")
+
+  // svg.append("g")
+  // .attr("transform", "translate(20,0)")
+
+  // .call(d3.axisLeft(yScale));
+
+  // svg.append("g")
+  // .attr("transform", "translate(0," + 480 + ")")
+  // .call(d3.axisBottom(scaleX));
+
+  //linear gradient
+  var lg = svg
+    .append("defs")
+    .append("linearGradient")
+    .attr("id", "mygrad")
+    .attr("x1", "0%")
+    .attr("x2", "0%")
+    .attr("y1", "0%")
+    .attr("y2", "100%");
+  lg.append("stop")
+    .attr("offset", "0%")
+    .style("stop-color", "#47d147")
+    .style("stop-opacity", 0.5);
+
+  lg.append("stop")
+    .attr("offset", "100%")
+    .style("stop-color", "#9fff80")
+    .style("stop-opacity", 0.4);
+
+  lg.append("stop")
+    .attr("offset", "100%")
+    .style("stop-color", "#d9ffcc")
+    .style("stop-opacity", 0.3);
+
+  lg.append("stop")
+    .attr("offset", "100%")
+    .style("stop-color", "#ffffff")
+    .style("stop-opacity", 0.2);
+
+  //area
+  svg
+    .append("path")
+    .datum(data)
+    .attr("fill", "url(#mygrad)")
+    .attr("opacity", 0.8)
+    .attr(
+      "d",
+      d3
+        .area()
+        .x((d, i) => x(toDate(d.time)))
+        .y0(getY(40))
+        .y1((d) => y(d.temp_c * scale))
+    );
+
+  //line
+
+  //  var lineGen = d3.line()
+
+  //  svg
+  //     .append("path")
+  //     .attr("d", lineGen([[padding, y(0)], [w-padding, y(0)]]))
+  //     .attr("fill", "none")
+  //     .attr("stroke-width", 5)
+  //     .attr("stroke", "#ddd")
+
+  //     svg
+  //     .append("text")
+  //     .text("0 Degrees")
+  //     .attr("x", padding + 5)
+  //     .attr("y", y(0)+20)
+  //     .style("fill", "#ababab")
+
+  svg
+    .append("path")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", "#33cc33")
+
+    .attr("stroke-width", 3.5)
+    .attr(
+      "d",
+      d3
+        .line()
+        .x(function (d) {
+          return x(toDate(d.time));
+        })
+        .y(function (d) {
+          return y(d.temp_c * scale);
+        })
+    );
+
+  svg
+    .selectAll("text.yaxis")
+    .data(data)
+    .enter()
+    .append("text")
+    .style("font-weight", 600)
+    .style("fill", "#ababab")
+    .text((d, i) =>
+      i % 3 == 0 && i != data.length - 1 && i != 0 ? d.temp_c : ""
+    )
+    .attr("x", (d) => x(toDate(d.time)) - 15)
+    .attr("y", (d) => y(d.temp_c * scale) - 20);
+
+  svg
+    .selectAll("text.xaxis")
+    .data(data)
+    .enter()
+    .append("text")
+    .style("font-weight", 600)
+    .style("fill", "#ababab")
+    .text((d, i) => {
+      const hour = toDate(d.time).getHours();
+
+      if (i % 3 != 0 || hour == 0) return "";
+
+      const offset = hour > 12 ? 12 : 0;
+      let postFix = hour > 12 ? "PM" : "AM";
+
+      return `${hour - offset} ${postFix}`;
+    })
+    .attr("x", (d) => x(toDate(d.time)) - 40)
+    .attr("y", (d) => h - 20);
+};
+
+const drawChart2 = (w, data, selector) => {
+  const h = 300;
+  const padding = 30;
+
+  const toDate = (time) => {
+    let parser = d3.timeParse("%Y-%m-%d %H:%M");
+    return parser(time);
+  };
+
+  var x = d3
+    .scaleTime()
+    .domain([
+      d3.min(data, (d) => toDate(d.time)),
+      d3.max(data, (d) => toDate(d.time)),
+    ])
+    .range([padding, w - padding]);
+
+  let minTemp = d3.min(data, (d) => d.temp_c);
+
+  const y = d3
+    .scaleLinear()
+    .domain([minTemp < 0 ? 0 : 0, d3.max(data, (d) => d.temp_c)])
+    .range([h - padding, padding]);
+
+  const getY = (y) => {
+    return h - y - 20;
+  };
+
+  const scale = 0.5;
+
+  const svg = d3
+    .select(`#d3-graph${selector}`)
     .append("svg")
     .attr("width", w)
     .attr("height", h);
