@@ -41,7 +41,7 @@ const Dashboard = (props) => {
 
     try {
       let { data } = await axios.get(
-        `http://api.weatherapi.com/v1/search.json?key=${apiKey}&q=${value}`
+        `//api.weatherapi.com/v1/search.json?key=${apiKey}&q=${value}`
       );
 
       setCities(data);
@@ -53,7 +53,7 @@ const Dashboard = (props) => {
   const onGetWeatherData = async (id) => {
     try {
       let { data } = await axios.get(
-        `http://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${id}&days=3`
+        `//api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${id}&days=3`
       );
 
       let { alerts, current, forecast, location } = data;
