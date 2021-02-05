@@ -278,7 +278,7 @@ const Info = styled.p`
 `;
 
 const CityName = styled.h1`
-  font-size: 2rem;
+  font-size: 3vw;
   padding-left: 0.5rem;
   color: #424242;
   font-weight: 300;
