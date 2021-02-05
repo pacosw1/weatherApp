@@ -21,11 +21,10 @@ const Dashboard = (props) => {
   let [clothes, setClothes] = useState({});
 
   useEffect(() => {
+    d3.select("#d3-graph2").select("svg").remove();
+    d3.select("#d3-graph3").select("svg").remove();
     d3.select("#d3-graph").select("svg").remove();
-    console.log(forecast);
     if (forecast["forecast"]) {
-      console.log(forecast);
-
       drawChart(w, forecast.forecast.hour);
       drawChart2(w / 2, forecastDays[1].hour, 2);
       drawChart2(w / 2, forecastDays[2].hour, 3);
@@ -163,7 +162,7 @@ const Dashboard = (props) => {
       <ResizeDiv>
         <Search>
           <Input
-            onChange={(e) => onSearch(e)}
+            onInput={(e) => onSearch(e)}
             value={keyword}
             height={4}
             placeholder="Search"
